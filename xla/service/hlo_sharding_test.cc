@@ -168,6 +168,20 @@ TEST_F(HloShardingTest, IotaProtoRoundTrip) {
   EXPECT_THAT(sharding.ToProto(), EqualsProto(proto));
 }
 
+TEST_F(HloShardingTest, FromProtoRejectsOverflowingTileDimensionProduct) {
+  // tile_assignment_dimensions' true product (8 * (2^61+1) = 2^64 + 8)
+  // overflows int64_t and wraps to 8, matching tile_assignment_devices.size().
+  // FromProto must reject this rather than silently accept the wrapped
+  // product and build an inconsistent TileAssignment.
+  auto proto = ParseTextProtoOrDie<OpSharding>(R"pb(
+    type: OTHER
+    tile_assignment_dimensions: 8
+    tile_assignment_dimensions: 2305843009213693953
+    tile_assignment_devices: [ 0, 1, 2, 3, 4, 5, 6, 7 ]
+  )pb");
+  EXPECT_IS_NOT_OK(HloSharding::FromProto(proto).status());
+}
+
 TEST_F(HloShardingTest, NamedShardingTupleProtoRoundTrip) {
   auto proto = ParseTextProtoOrDie<OpSharding>(R"pb(
     type: TUPLE

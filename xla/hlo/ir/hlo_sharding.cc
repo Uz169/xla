@@ -1114,6 +1114,7 @@ const TileAssignment& HloSharding::TileAgnosticDeviceAssignment() const {
       bool overflow = false;
       std::tie(product_of_dimensions, overflow) =
           OverflowSafeMultiply(product_of_dimensions, dimension);
+      any_overflow |= overflow;
     }
     TF_RET_CHECK(!any_overflow);
     return product_of_dimensions;
