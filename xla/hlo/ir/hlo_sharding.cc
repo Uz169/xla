@@ -1087,6 +1087,14 @@ const TileAssignment& HloSharding::TileAgnosticDeviceAssignment() const {
     TF_RET_CHECK(proto.tile_assignment_devices().empty());
     TF_RET_CHECK(proto.iota_reshape_dims().size() ==
                  proto.iota_transpose_perm().size());
+    absl::flat_hash_set<int> seen_perm_dims;
+    for (int dim : proto.iota_transpose_perm()) {
+      TF_RET_CHECK(dim >= 0 &&
+                   dim < static_cast<int>(proto.iota_reshape_dims().size()) &&
+                   seen_perm_dims.insert(dim).second)
+          << "iota_transpose_perm must be a permutation of "
+             "[0, iota_reshape_dims.size())";
+    }
   } else {
     TF_RET_CHECK(!proto.tile_assignment_devices().empty());
   }
